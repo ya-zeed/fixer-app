@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "399835797326",
+    "project_id": "gp2fixer",
+    "storage_bucket": "gp2fixer.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:399835797326:android:2e31454f81de9a5ac7b01f",
+        "android_client_info": {
+          "package_name": "com.GP2fixer.fixer_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKCuultdptPLDE_bbHPi1tVLDt0ZWlWU4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
