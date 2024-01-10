@@ -49,7 +49,7 @@ class _AssignTaskState extends State<AssignTask> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Your Tasks'),
+        title: Text('Assign Task'),
       ),
       backgroundColor: Colors.grey[300],
       body: SingleChildScrollView(
@@ -62,7 +62,7 @@ class _AssignTaskState extends State<AssignTask> {
               children: [
                 SizedBox(height: 20),
                 Text(
-                  'Your Tasks',
+                  'Assign',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
