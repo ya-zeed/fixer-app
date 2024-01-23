@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class AssignTask extends StatefulWidget {
   static const String route = 'AssignTask';
@@ -11,33 +13,56 @@ class AssignTask extends StatefulWidget {
 
 class _AssignTaskState extends State<AssignTask> {
   String newTask = '';
-  String userEmail = ''; // New variable for storing user email
+  String userId = '';
+  DateTime dueDate = DateTime.now();
+  dynamic user;
+
+  Future<void> _selectDueDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: dueDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != dueDate)
+      setState(() {
+        dueDate = picked;
+      });
+  }
 
   void saveTasksToFirestore() async {
-    if (userEmail.isNotEmpty) {
-      await FirebaseFirestore.instance.collection('tasks').doc(userEmail).set({
-        'tasks': FieldValue.arrayUnion([newTask])
-      }, SetOptions(merge: true));
+    user = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .get()
+        .then((value) => value.data());
 
+    if (user == null) {
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            content: Text('Task saved successfully'),
+            content: Text('User not found'),
           );
         },
       );
-    } else {
-      // Handle the case when email is not entered
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            content: Text('Please enter an email address'),
-          );
-        },
-      );
+      return;
     }
+
+    await FirebaseFirestore.instance.collection('tasks').doc(userId).set({
+      'tasks': FieldValue.arrayUnion([
+        {"task": newTask, "dueDate": dueDate.toString()}
+      ])
+    }, SetOptions(merge: true));
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Text('Task saved successfully'),
+        );
+      },
+    );
   }
 
   @override
@@ -72,11 +97,11 @@ class _AssignTaskState extends State<AssignTask> {
                 TextField(
                   onChanged: (value) {
                     setState(() {
-                      userEmail = value;
+                      userId = value;
                     });
                   },
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Employee ID',
                   ),
                 ),
                 SizedBox(height: 10),
@@ -91,11 +116,23 @@ class _AssignTaskState extends State<AssignTask> {
                   ),
                 ),
                 SizedBox(height: 10),
+                InkWell(
+                  onTap: () => _selectDueDate(context),
+                  child: IgnorePointer(
+                    child: TextField(
+                      controller: TextEditingController(
+                          text: DateFormat('yyyy-MM-dd').format(dueDate)),
+                      decoration: InputDecoration(
+                        labelText: 'Due Date',
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
                       saveTasksToFirestore();
-                      newTask = '';
                     });
                   },
                   child: Text('Add Task'),

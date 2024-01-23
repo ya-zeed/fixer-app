@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class YourTask extends StatefulWidget {
   static const String route = 'TaskList';
@@ -12,8 +13,7 @@ class YourTask extends StatefulWidget {
 
 class _YourTaskState extends State<YourTask> {
   final User? user = FirebaseAuth.instance.currentUser;
-
-  late List<String> tasks = [];
+  late Map<String, List<Map<String, String>>> tasksByDay = {};
 
   @override
   void initState() {
@@ -25,12 +25,18 @@ class _YourTaskState extends State<YourTask> {
     try {
       var tasksSnapshot = await FirebaseFirestore.instance
           .collection('tasks')
-          .doc(user?.email)
+          .doc(user?.displayName)
           .get();
 
       if (tasksSnapshot.exists) {
+        var fetchedTasks = (tasksSnapshot.data()?['tasks'] ?? [])
+            .map<Map<String, String>>((task) {
+          return Map<String, String>.from(task as Map);
+        }).toList();
+
+        var groupedTasks = groupTasksByDay(fetchedTasks);
         setState(() {
-          tasks = List<String>.from(tasksSnapshot.data()?['tasks']);
+          tasksByDay = groupedTasks;
         });
       }
     } catch (e) {
@@ -38,23 +44,19 @@ class _YourTaskState extends State<YourTask> {
     }
   }
 
-  void saveTasksToFirestore() async {
-    await FirebaseFirestore.instance
-        .collection('tasks')
-        .doc('yazoid1421@gmail.com')
-        .set({'tasks': tasks});
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: Text('Task saved successfully'),
-        );
-      },
-    );
+  Map<String, List<Map<String, String>>> groupTasksByDay(
+      List<Map<String, String>> tasks) {
+    Map<String, List<Map<String, String>>> grouped = {};
+    for (var task in tasks) {
+      String dayOfWeek =
+          DateFormat('EEEE').format(DateTime.parse(task['dueDate']!));
+      if (!grouped.containsKey(dayOfWeek)) {
+        grouped[dayOfWeek] = [];
+      }
+      grouped[dayOfWeek]!.add(task);
+    }
+    return grouped;
   }
-
-  String newTask = '';
 
   @override
   Widget build(BuildContext context) {
@@ -85,38 +87,26 @@ class _YourTaskState extends State<YourTask> {
                   ),
                 ),
                 SizedBox(height: 20),
-                TextField(
-                  onChanged: (value) {
-                    setState(() {
-                      newTask = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'New Task',
-                  ),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      tasks.add(newTask);
-                      saveTasksToFirestore();
-                      newTask = '';
-                    });
-                  },
-                  child: Text('Add Task'),
-                ),
-                SizedBox(height: 20),
-                ...tasks
-                    .map(
-                      (task) => Card(
-                        child: ListTile(
-                          title: Text(task),
-                          trailing: Icon(Icons.check_circle_outline),
-                        ),
+                ...tasksByDay.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.key, // Day of the week
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                    )
-                    .toList(),
+                      ...entry.value.map((task) => Card(
+                            child: ListTile(
+                              title: Text(task['task']!),
+                              subtitle: Text(
+                                  'Due: ${DateFormat('yyyy-MM-DD').format(DateTime.parse(task['dueDate']!))}'),
+                              trailing: Icon(Icons.arrow_forward_rounded),
+                            ),
+                          )),
+                    ],
+                  );
+                }).toList(),
               ],
             ),
           ),
@@ -124,49 +114,4 @@ class _YourTaskState extends State<YourTask> {
       ),
     );
   }
-}
-
-Widget build(BuildContext context) {
-  var tasks;
-  return Scaffold(
-    appBar: AppBar(
-      backgroundColor: Colors.grey[500],
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: Text('Your Tasks'),
-    ),
-    backgroundColor: Colors.grey[300],
-    body: SingleChildScrollView(
-      child: SafeArea(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(15.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                'Your Tasks',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 20),
-              ...tasks
-                  .map((task) => Card(
-                        child: ListTile(
-                          title: Text(task),
-                          trailing: Icon(Icons.check_circle_outline),
-                        ),
-                      ))
-                  .toList(),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
 }

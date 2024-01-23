@@ -53,6 +53,15 @@ class _Home extends State<Home> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
+                              Text(
+                                'Employee Id: ' +
+                                    auth.currentUser!.displayName!,
+                                style: TextStyle(
+                                  color: colors.mainColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                               const SizedBox(
                                 height: 50,
                               ),

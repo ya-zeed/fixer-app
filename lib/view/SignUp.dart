@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fixer_app/Colors/colors.dart';
 import 'package:fixer_app/view/Home.dart';
@@ -27,6 +28,12 @@ class _SignUp extends State<SignUp> {
     String password = Passwordcontroller.text;
     String confirmPassword = ConfirmPaawordcontroller.text;
     return password == confirmPassword;
+  }
+
+  void createUserInDatabase(email, userId) async {
+    await FirebaseFirestore.instance.collection('users').doc(userId).set({
+      'email': email,
+    });
   }
 
   @override
@@ -153,6 +160,7 @@ class _SignUp extends State<SignUp> {
                                       await auth.createUserWithEmailAndPassword(
                                           email: email, password: password);
                                   await user.user!.updateDisplayName(ID);
+                                  createUserInDatabase(email, ID);
 
                                   Navigator.pushNamed(context, Home.route);
                                 } catch (e) {
